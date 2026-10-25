@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useEffect, useRef, useState } from "react";
@@ -116,6 +115,13 @@ const dailyQuotes = [
 function toKatakana(hira: string) {
   return hira.replace(/[ぁ-ゖ]/g, (character) =>
     String.fromCharCode(character.charCodeAt(0) + 0x60)
+  );
+}
+
+// 将片假名转换成平假名，方便统一判断答案
+function toHiragana(text: string) {
+  return text.replace(/[ァ-ヶ]/g, (character) =>
+    String.fromCharCode(character.charCodeAt(0) - 0x60)
   );
 }
 
@@ -281,7 +287,13 @@ export default function Home() {
     const normalized = answer.trim().toLowerCase();
     if (!normalized) return;
 
-    if (question.aliases.includes(normalized)) {
+    // 支持罗马音、平假名和片假名三种输入方式
+    const normalizedKana = toHiragana(normalized);
+
+    if (
+      question.aliases.includes(normalized) ||
+      normalizedKana === question.hira
+    ) {
       setFeedback("correct");
       stopAudioAndTimer();
 
@@ -507,7 +519,7 @@ export default function Home() {
                     autoComplete="off"
                     autoCapitalize="none"
                     spellCheck={false}
-                    placeholder="输入罗马音，例如 ka"
+                    placeholder="输入罗马音或日语假名"
                     className="w-full rounded-xl border border-[#eae7df] bg-white px-4 py-3.5 text-center text-lg outline-none transition placeholder:text-sm placeholder:text-[#c0bcb3] focus:border-[#d9b6b3] sm:py-4 sm:text-xl"
                   />
 
@@ -532,7 +544,8 @@ export default function Home() {
                       再试一次吧 ♡
                     </p>
                     <p className="mt-2 text-sm text-[#77746b]">
-                      正确答案：{question.aliases.join(" / ")}
+                      正确答案：{question.aliases.join(" / ")} /{" "}
+                      {question.hira} / {toKatakana(question.hira)}
                     </p>
                     <button
                       type="button"
